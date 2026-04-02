@@ -5,7 +5,7 @@ if not api then
     return
 end
 
-local tab = api:GetTab(";") or api:AddTab(";")
+local tab = api:GetTab("kz") or api:AddTab("kz")
 local plrs = game:GetService("Players")
 local runs = game:GetService("RunService")
 local plr = plrs.LocalPlayer
@@ -286,7 +286,7 @@ autobuybox:AddToggle('autofirearmor', {
 
 autobuybox:AddSlider('firearmor_threshold', {
     Text = 'threshold',
-    Default = 50,
+    Default = 35,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -302,7 +302,7 @@ autobuybox:AddSlider('heal_threshold', {
     Text = 'threshold',
     Default = 50,
     Min = 1,
-    Max = 99,
+    Max = 100,
     Suffix = '%',
     Rounding = 0
 })
