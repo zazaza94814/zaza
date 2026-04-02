@@ -15,7 +15,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local voidbox = tab:GetGroupbox("better void") or tab:AddLeftGroupbox("better void")
-local autobuybox = tab:GetGroupbox("automation") or tab:AddRightGroupbox("automation")
+local autobuybox = tab:GetGroupbox("autobuy") or tab:AddRightGroupbox("autobuy")
 
 local autobagstates = {
     lastbought = 0,
@@ -30,7 +30,9 @@ local autobagstates = {
 local protectionstate = {
     hiding = false,
     bagThreat = false,
-    fireArmorLastBought = 0
+    fireArmorLastBought = 0,
+    healing = false,
+    burgerLastBought = 0
 }
 
 local resetDebounce = 0
@@ -199,6 +201,7 @@ local function onCharacterAdded(c)
     char = c
     hrp = c:WaitForChild("HumanoidRootPart")
     protectionstate.bagThreat = false
+    protectionstate.healing = false
 end
 
 local previousAutobagTargets = {}
@@ -272,17 +275,23 @@ protectionbox:AddToggle('antibag', {
     Default = true
 })
 
-autobuybox:AddToggle('autofirearmor', {
-    Text = 'firearmor',
-    Default = true
+-- Autobuy Section
+autobuybox:AddToggle('autoheal', {
+    Text = 'autoheal (hamburger)',
+    Default = false
 })
-autobuybox:AddSlider('firearmor_threshold', {
-    Text = 'threshold',
-    Default = 35,
+autobuybox:AddSlider('heal_threshold', {
+    Text = 'heal threshold',
+    Default = 50,
     Min = 1,
     Max = 99,
     Suffix = '%',
     Rounding = 0
+})
+
+autobuybox:AddToggle('autofirearmor', {
+    Text = 'firearmor',
+    Default = true
 })
 
 local voidtoggle = voidbox:AddToggle('manualvoid', {
@@ -299,11 +308,11 @@ voidtoggle:AddKeyPicker('voidkeybind', {
 
 voidtoggle:OnChanged(function(v)
     if not v then
-        if not protectionstate.hiding and not autobagstates.ffHiding then
+        if not protectionstate.hiding and not autobagstates.ffHiding and not protectionstate.healing then
             api:set_desync_cframe(nil)
         end
     else
-        if not autobagstates.target and not protectionstate.hiding then
+        if not autobagstates.target and not protectionstate.hiding and not protectionstate.healing then
             api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
         end
     end
@@ -369,6 +378,54 @@ api:add_connection(runs.Heartbeat:Connect(function()
         end
     end
 
+    -- Autoheal Logic (Overrides everything else when triggered)
+    if Toggles.autoheal and Toggles.autoheal.Value then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum and hum.Health > 0 and hum.MaxHealth > 0 then
+            local hpPercent = (hum.Health / hum.MaxHealth) * 100
+            
+            -- Enter healing state if HP falls below threshold
+            if hpPercent <= Options.heal_threshold.Value then
+                protectionstate.healing = true
+            end
+            
+            -- Exit healing state ONLY when HP reaches 100%
+            if hpPercent >= 99.9 then
+                protectionstate.healing = false
+            end
+            
+            -- Perform healing actions while in healing state
+            if protectionstate.healing then
+                api:set_ragebot(false)
+                
+                local bp = plr:FindFirstChildOfClass("Backpack")
+                local burger = char:FindFirstChild("[Hamburger]") or (bp and bp:FindFirstChild("[Hamburger]"))
+                
+                if not burger then
+                    -- Buy burger if we don't have one
+                    if tick() - protectionstate.burgerLastBought > 2 then
+                        protectionstate.burgerLastBought = tick()
+                        api:buy_item("[Hamburger]", false, true)
+                    end
+                else
+                    -- Make sure only the hamburger is equipped, void, and eat
+                    unequipAll()
+                    burger.Parent = char
+                    api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
+                    burger:Activate()
+                end
+                
+                -- Block all other tasks from running while we heal
+                return 
+            end
+        else
+            -- Reset if dead
+            protectionstate.healing = false
+        end
+    else
+        protectionstate.healing = false
+    end
+
     local anyFlameThreat = false
     local anyVulnerable = false
     local shouldHide = false
@@ -414,7 +471,8 @@ api:add_connection(runs.Heartbeat:Connect(function()
         local armor = 0
         if cache then armor = cache.FireArmor or 0 end
         local percent = math.clamp((armor / 200) * 100, 0, 100)
-        if percent <= Options.firearmor_threshold.Value then
+        -- Hardcoded 50% threshold for firearmor
+        if percent <= 50 then
             if tick() - protectionstate.fireArmorLastBought > 2 then
                 protectionstate.fireArmorLastBought = tick()
                 api:buy_item("[Fire Armor]", false, true)
