@@ -15,7 +15,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local voidbox = tab:GetGroupbox("better void") or tab:AddLeftGroupbox("better void")
-local autobuybox = tab:GetGroupbox("autobuy") or tab:AddRightGroupbox("autobuy")
+local autobuybox = tab:GetGroupbox("automation") or tab:AddRightGroupbox("automation")
 
 local autobagstates = {
     lastbought = 0,
