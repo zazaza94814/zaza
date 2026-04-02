@@ -93,13 +93,17 @@ local function getPlayerFromSearch(str)
     return closestPlayer
 end
 
--- Formatting: Username outside, DisplayName inside brackets
+-- Formatting: Username outside, DisplayName inside brackets (Max 7 chars each)
 local function formatPlayerName(p)
     local username = p.Name
     local display = p.DisplayName
     
-    if #username > 12 then
-        username = username:sub(1, 12) .. "..."
+    if #username > 7 then
+        username = username:sub(1, 7) .. "..."
+    end
+    
+    if #display > 7 then
+        display = display:sub(1, 7) .. "..."
     end
     
     return username .. " (" .. display .. ")"
@@ -457,14 +461,14 @@ autobuybox:AddSlider('firearmor_threshold', {
 
 autobuybox:AddToggle('autoheal', {
     Text = 'hamburger',
-    Default = false
+    Default = true
 })
 
 autobuybox:AddSlider('heal_threshold', {
     Text = 'threshold',
-    Default = 50,
+    Default = 75,
     Min = 1,
-    Max = 100,
+    Max = 99,
     Suffix = '%',
     Rounding = 0
 })
