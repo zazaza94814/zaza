@@ -93,12 +93,16 @@ local function getPlayerFromSearch(str)
     return closestPlayer
 end
 
+-- Formatting: Username outside, DisplayName inside brackets
 local function formatPlayerName(p)
-    local n = p.Name
-    if #n > 7 then
-        n = n:sub(1, 7) .. "..."
+    local username = p.Name
+    local display = p.DisplayName
+    
+    if #username > 12 then
+        username = username:sub(1, 12) .. "..."
     end
-    return n .. " (" .. p.DisplayName .. ")"
+    
+    return username .. " (" .. display .. ")"
 end
 
 local function getVoidState()
