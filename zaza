@@ -12,10 +12,11 @@ local plr = plrs.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
+-- All groupboxes strictly on the left side in requested order
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
+local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
+local autobuybox = tab:GetGroupbox("autobuy") or tab:AddLeftGroupbox("autobuy")
 local voidbox = tab:GetGroupbox("better void") or tab:AddLeftGroupbox("better void")
-local autobuybox = tab:GetGroupbox("autobuy") or tab:AddRightGroupbox("autobuy")
 
 local autobagstates = {
     lastbought = 0,
@@ -207,6 +208,22 @@ end
 local previousAutobagTargets = {}
 local latestSelectedTarget = nil
 
+-- Protection Section
+protectionbox:AddDropdown('antiflametargets', {
+    SpecialType = 'Player',
+    Text = 'targets',
+    Multi = true
+})
+protectionbox:AddToggle('antiflame', {
+    Text = 'antiflame',
+    Default = true
+})
+protectionbox:AddToggle('antibag', {
+    Text = 'antibag',
+    Default = true
+})
+
+-- Autobag Section
 autobagbox:AddDropdown('autobagtargets', {
     SpecialType = 'Player',
     Text = 'targets',
@@ -261,20 +278,6 @@ autobag:OnChanged(function(v)
     end
 end)
 
-protectionbox:AddDropdown('antiflametargets', {
-    SpecialType = 'Player',
-    Text = 'targets',
-    Multi = true
-})
-protectionbox:AddToggle('antiflame', {
-    Text = 'antiflame',
-    Default = true
-})
-protectionbox:AddToggle('antibag', {
-    Text = 'antibag',
-    Default = true
-})
-
 -- Autobuy Section
 autobuybox:AddToggle('autofirearmor', {
     Text = 'firearmor',
@@ -291,7 +294,7 @@ autobuybox:AddSlider('firearmor_threshold', {
 })
 
 autobuybox:AddToggle('autoheal', {
-    Text = 'autoheal',
+    Text = 'hamburger',
     Default = false
 })
 
@@ -304,6 +307,7 @@ autobuybox:AddSlider('heal_threshold', {
     Rounding = 0
 })
 
+-- Better Void Section
 local voidtoggle = voidbox:AddToggle('manualvoid', {
     Text = 'enabled',
     Default = false
@@ -392,6 +396,17 @@ api:add_connection(runs.Heartbeat:Connect(function()
     if Toggles.autoheal and Toggles.autoheal.Value then
         local hum = char:FindFirstChild("Humanoid")
         if hum and hum.Health > 0 and hum.MaxHealth > 0 then
+            local bp = plr:FindFirstChildOfClass("Backpack")
+            local burger = char:FindFirstChild("[Hamburger]") or (bp and bp:FindFirstChild("[Hamburger]"))
+            
+            -- Proactively buy the burger if we don't have one in inventory
+            if not burger then
+                if tick() - protectionstate.burgerLastBought > 2 then
+                    protectionstate.burgerLastBought = tick()
+                    api:buy_item("[Hamburger]", false, true)
+                end
+            end
+
             local hpPercent = (hum.Health / hum.MaxHealth) * 100
             
             -- Enter healing state if HP falls below threshold
@@ -408,16 +423,7 @@ api:add_connection(runs.Heartbeat:Connect(function()
             if protectionstate.healing then
                 api:set_ragebot(false)
                 
-                local bp = plr:FindFirstChildOfClass("Backpack")
-                local burger = char:FindFirstChild("[Hamburger]") or (bp and bp:FindFirstChild("[Hamburger]"))
-                
-                if not burger then
-                    -- Buy burger if we don't have one
-                    if tick() - protectionstate.burgerLastBought > 2 then
-                        protectionstate.burgerLastBought = tick()
-                        api:buy_item("[Hamburger]", false, true)
-                    end
-                else
+                if burger then
                     -- Make sure only the hamburger is equipped, void, and eat
                     unequipAll()
                     burger.Parent = char
