@@ -291,7 +291,7 @@ local protFoundPlayer = nil
 
 protectionbox:AddInput('protSearch', {
     Default = '',
-    Text = 'search player',
+    Text = 'player search',
     Numeric = false,
     Finished = false,
     Placeholder = 'player...'
@@ -374,7 +374,7 @@ local autobagFoundPlayer = nil
 
 autobagbox:AddInput('autobagSearch', {
     Default = '',
-    Text = 'search player',
+    Text = 'player search',
     Numeric = false,
     Finished = false,
     Placeholder = 'player...'
