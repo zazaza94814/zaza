@@ -12,11 +12,11 @@ local plr = plrs.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
--- All groupboxes strictly on the left side in requested order
+-- UI Layout
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local autobuybox = tab:GetGroupbox("autobuy") or tab:AddLeftGroupbox("autobuy")
-local voidbox = tab:GetGroupbox("better void") or tab:AddLeftGroupbox("better void")
+local voidbox = tab:GetGroupbox("better void") or tab:AddRightGroupbox("better void")
 
 local autobagstates = {
     lastbought = 0,
@@ -91,6 +91,14 @@ local function getPlayerFromSearch(str)
     end
     
     return closestPlayer
+end
+
+local function formatPlayerName(p)
+    local n = p.Name
+    if #n > 7 then
+        n = n:sub(1, 7) .. "..."
+    end
+    return n .. " (" .. p.DisplayName .. ")"
 end
 
 local function getVoidState()
@@ -289,7 +297,7 @@ protectionbox:AddInput('protSearch', {
     local p = getPlayerFromSearch(text)
     if p then
         protFoundPlayer = p
-        protSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
+        protSearchResult:SetText('result: <b>' .. formatPlayerName(p) .. '</b>')
     else
         protFoundPlayer = nil
         protSearchResult:SetText('result: ?')
@@ -372,7 +380,7 @@ autobagbox:AddInput('autobagSearch', {
     local p = getPlayerFromSearch(text)
     if p then
         autobagFoundPlayer = p
-        autobagSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
+        autobagSearchResult:SetText('result: <b>' .. formatPlayerName(p) .. '</b>')
     else
         autobagFoundPlayer = nil
         autobagSearchResult:SetText('result: ?')
