@@ -241,14 +241,6 @@ autobag:AddKeyPicker('autobagkeybind', {
     SyncToggleState = true
 })
 
-autobagbox:AddSlider('autobagheight', {
-    Text = 'autobag height',
-    Default = 0,
-    Min = 0,
-    Max = 5,
-    Rounding = 0
-})
-
 autobagbox:AddSlider('autobagdistance', {
     Text = 'autobag distance',
     Default = 0,
@@ -650,8 +642,7 @@ api:add_connection(runs.Heartbeat:Connect(function()
         safeDist = 0.01
     end
     
-    hrp.CFrame = CFrame.lookAt(tPart.Position - (tPart.CFrame.LookVector * safeDist) + Vector3.new(0, Options.autobagheight.Value, 0),
-        tPart.Position + Vector3.new(0, Options.autobagheight.Value, 0))
+    hrp.CFrame = CFrame.lookAt(tPart.Position - (tPart.CFrame.LookVector * safeDist), tPart.Position)
         
     if getVoidState() and not protectionstate.hiding then
         api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
