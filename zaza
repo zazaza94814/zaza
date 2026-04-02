@@ -285,7 +285,7 @@ autobuybox:AddToggle('autofirearmor', {
 })
 
 autobuybox:AddSlider('firearmor_threshold', {
-    Text = 'firearmor threshold',
+    Text = 'threshold',
     Default = 50,
     Min = 1,
     Max = 99,
@@ -299,7 +299,7 @@ autobuybox:AddToggle('autoheal', {
 })
 
 autobuybox:AddSlider('heal_threshold', {
-    Text = 'heal threshold',
+    Text = 'threshold',
     Default = 50,
     Min = 1,
     Max = 99,
