@@ -465,7 +465,7 @@ autobuybox:AddToggle('autofirearmor', {
 
 autobuybox:AddSlider('firearmor_threshold', {
     Text = 'threshold',
-    Default = 35,
+    Default = 50,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -481,7 +481,7 @@ autobuybox:AddToggle('autoheal', {
 
 autobuybox:AddSlider('heal_threshold', {
     Text = 'threshold',
-    Default = 75,
+    Default = 50,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -510,7 +510,7 @@ voidbox:AddToggle('spamvoid', {
 
 voidbox:AddSlider('invoid_time', {
     Text = 'in void',
-    Default = 1,
+    Default = 0.5,
     Min = 0.02,
     Max = 1,
     Rounding = 2,
@@ -521,7 +521,7 @@ voidbox:AddSlider('invoid_time', {
 
 voidbox:AddSlider('outofvoid_time', {
     Text = 'out of void',
-    Default = 0.1,
+    Default = 0.05,
     Min = 0.02,
     Max = 1,
     Rounding = 2,
