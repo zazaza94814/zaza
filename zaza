@@ -273,7 +273,7 @@ protectionbox:AddToggle('antibag', {
 })
 
 autobuybox:AddToggle('autofirearmor', {
-    Text = 'autobuy firearmor',
+    Text = 'firearmor',
     Default = true
 })
 autobuybox:AddSlider('firearmor_threshold', {
