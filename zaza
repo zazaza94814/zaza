@@ -533,6 +533,8 @@ api:add_connection(runs.Heartbeat:Connect(function()
                     end
                     return
                 else
+                    -- Forcing ragebot off here just to be completely safe
+                    api:set_ragebot(false) 
                     local doVoid = getVoidState() or protectionstate.hiding
                     cleanupAutobag(doVoid)
                     return
@@ -563,6 +565,15 @@ api:add_connection(runs.Heartbeat:Connect(function()
 
     if autobagstates.target and not autobagstates.downing and (isBagged(autobagstates.target.Player) or isKOd(autobagstates.target.Player)) then
         local tp = autobagstates.target.Player
+
+        -- Fix: Check if they got KO'd while we were chasing them and stomp is OFF.
+        if isKOd(tp) and not Toggles.autostomp.Value then
+            api:set_ragebot(false)
+            local doVoid = getVoidState() or protectionstate.hiding
+            cleanupAutobag(doVoid)
+            return
+        end
+
         addToRagebotTargets(tp.Name)
         if autobagstates.target.Part then
             autobagstates.target.Part.Anchored = false
