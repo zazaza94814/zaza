@@ -234,7 +234,7 @@ protectionbox:AddDropdown('antiflametargets', {
     Multi = true
 })
 
-local protSearchResult = protectionbox:AddLabel('Result: None')
+local protSearchResult = protectionbox:AddLabel('result: none')
 local protFoundPlayer = nil
 
 protectionbox:AddInput('protSearch', {
@@ -247,14 +247,14 @@ protectionbox:AddInput('protSearch', {
     local p = getPlayerFromSearch(text)
     if p then
         protFoundPlayer = p
-        protSearchResult:SetText('Result: ' .. p.DisplayName .. ' (@' .. p.Name .. ')')
+        protSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
     else
         protFoundPlayer = nil
-        protSearchResult:SetText('Result: None')
+        protSearchResult:SetText('result: none')
     end
 end)
 
-protectionbox:AddButton({
+local protTargetBtn = protectionbox:AddButton({
     Text = 'target',
     Func = function()
         if protFoundPlayer then
@@ -268,7 +268,7 @@ protectionbox:AddButton({
     end
 })
 
-protectionbox:AddButton({
+protTargetBtn:AddButton({
     Text = 'clear targets',
     Func = function()
         Options.antiflametargets:SetValue({})
@@ -311,7 +311,7 @@ autobagbox:AddDropdown('autobagtargets', {
     end
 end)
 
-local autobagSearchResult = autobagbox:AddLabel('Result: None')
+local autobagSearchResult = autobagbox:AddLabel('result: none')
 local autobagFoundPlayer = nil
 
 autobagbox:AddInput('autobagSearch', {
@@ -324,14 +324,14 @@ autobagbox:AddInput('autobagSearch', {
     local p = getPlayerFromSearch(text)
     if p then
         autobagFoundPlayer = p
-        autobagSearchResult:SetText('Result: ' .. p.DisplayName .. ' (@' .. p.Name .. ')')
+        autobagSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
     else
         autobagFoundPlayer = nil
-        autobagSearchResult:SetText('Result: None')
+        autobagSearchResult:SetText('result: none')
     end
 end)
 
-autobagbox:AddButton({
+local autobagTargetBtn = autobagbox:AddButton({
     Text = 'target',
     Func = function()
         if autobagFoundPlayer then
@@ -345,7 +345,7 @@ autobagbox:AddButton({
     end
 })
 
-autobagbox:AddButton({
+autobagTargetBtn:AddButton({
     Text = 'clear targets',
     Func = function()
         Options.autobagtargets:SetValue({})
@@ -387,8 +387,8 @@ autobuybox:AddToggle('autofirearmor', {
 })
 
 autobuybox:AddSlider('firearmor_threshold', {
-    Text = 'firearmor threshold',
-    Default = 50,
+    Text = 'threshold',
+    Default = 35,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -401,10 +401,10 @@ autobuybox:AddToggle('autoheal', {
 })
 
 autobuybox:AddSlider('heal_threshold', {
-    Text = 'heal threshold',
+    Text = 'threshold',
     Default = 50,
     Min = 1,
-    Max = 99,
+    Max = 100,
     Suffix = '%',
     Rounding = 0
 })
