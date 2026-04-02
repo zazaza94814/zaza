@@ -235,7 +235,7 @@ local autobag = autobagbox:AddToggle('autobag', {
 })
 
 autobag:AddKeyPicker('autobagkeybind', {
-    Default = '',
+    Default = 'H',
     Text = 'autobag',
     Mode = 'Toggle',
     SyncToggleState = true
@@ -243,7 +243,7 @@ autobag:AddKeyPicker('autobagkeybind', {
 
 autobagbox:AddSlider('autobagdistance', {
     Text = 'autobag distance',
-    Default = 0,
+    Default = 3,
     Min = 0,
     Max = 5,
     Rounding = 0
@@ -264,19 +264,19 @@ protectionbox:AddDropdown('antiflametargets', {
 })
 protectionbox:AddToggle('antiflame', {
     Text = 'antiflame',
-    Default = false
+    Default = true
 })
 protectionbox:AddToggle('antibag', {
     Text = 'antibag',
-    Default = false
+    Default = true
 })
 protectionbox:AddToggle('autofirearmor', {
     Text = 'autobuy firearmor',
-    Default = false
+    Default = true
 })
 protectionbox:AddSlider('firearmor_threshold', {
     Text = 'firearmor threshold',
-    Default = 25,
+    Default = 50,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -289,7 +289,7 @@ local voidtoggle = voidbox:AddToggle('manualvoid', {
 })
 
 voidtoggle:AddKeyPicker('voidkeybind', {
-    Default = '',
+    Default = 'Y',
     Text = 'void',
     Mode = 'Toggle',
     SyncToggleState = true
