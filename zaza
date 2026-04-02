@@ -276,12 +276,13 @@ protectionbox:AddToggle('antibag', {
 })
 
 -- Autobuy Section
-autobuybox:AddToggle('autoheal', {
-    Text = 'autoheal (hamburger)',
-    Default = false
+autobuybox:AddToggle('autofirearmor', {
+    Text = 'firearmor',
+    Default = true
 })
-autobuybox:AddSlider('heal_threshold', {
-    Text = 'heal threshold',
+
+autobuybox:AddSlider('firearmor_threshold', {
+    Text = 'firearmor threshold',
     Default = 50,
     Min = 1,
     Max = 99,
@@ -289,9 +290,18 @@ autobuybox:AddSlider('heal_threshold', {
     Rounding = 0
 })
 
-autobuybox:AddToggle('autofirearmor', {
-    Text = 'firearmor',
-    Default = true
+autobuybox:AddToggle('autoheal', {
+    Text = 'autoheal',
+    Default = false
+})
+
+autobuybox:AddSlider('heal_threshold', {
+    Text = 'heal threshold',
+    Default = 50,
+    Min = 1,
+    Max = 99,
+    Suffix = '%',
+    Rounding = 0
 })
 
 local voidtoggle = voidbox:AddToggle('manualvoid', {
@@ -471,8 +481,8 @@ api:add_connection(runs.Heartbeat:Connect(function()
         local armor = 0
         if cache then armor = cache.FireArmor or 0 end
         local percent = math.clamp((armor / 200) * 100, 0, 100)
-        -- Hardcoded 50% threshold for firearmor
-        if percent <= 50 then
+        
+        if percent <= Options.firearmor_threshold.Value then
             if tick() - protectionstate.fireArmorLastBought > 2 then
                 protectionstate.fireArmorLastBought = tick()
                 api:buy_item("[Fire Armor]", false, true)
