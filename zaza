@@ -257,11 +257,6 @@ autobagbox:AddSlider('autobagdistance', {
     Rounding = 0
 })
 
-local autostomp = autobagbox:AddToggle('autostomp', {
-    Text = 'stomp',
-    Default = false
-})
-
 autobag:OnChanged(function(v)
     if not v then
         api:set_ragebot(false)
@@ -464,8 +459,8 @@ api:add_connection(runs.Heartbeat:Connect(function()
         if p and p.Character and not isDead(p) then
             local kod = isKOd(p)
             local bagged = isBagged(p)
-            if kod and not Toggles.autostomp.Value then
-            elseif kod or bagged then
+            
+            if kod or bagged then
                 table.insert(vulnerable, 1, p)
             elseif isVulnerable(p) then
                 table.insert(vulnerable, 1, p)
@@ -482,8 +477,7 @@ api:add_connection(runs.Heartbeat:Connect(function()
                 local kod = isKOd(p)
                 local bagged = isBagged(p)
                 
-                if kod and not Toggles.autostomp.Value then
-                elseif kod or bagged then
+                if kod or bagged then
                     table.insert(vulnerable, p)
                 elseif isVulnerable(p) then
                     table.insert(vulnerable, p)
@@ -525,20 +519,12 @@ api:add_connection(runs.Heartbeat:Connect(function()
             end
         else
             if isKOd(targetPlayer) then
-                if Toggles.autostomp.Value then
-                    unequipBag()
-                    api:set_ragebot(true)
-                    if not protectionstate.hiding then
-                        api:set_desync_cframe(nil)
-                    end
-                    return
-                else
-                    -- Forcing ragebot off here just to be completely safe
-                    api:set_ragebot(false) 
-                    local doVoid = getVoidState() or protectionstate.hiding
-                    cleanupAutobag(doVoid)
-                    return
+                unequipBag()
+                api:set_ragebot(true)
+                if not protectionstate.hiding then
+                    api:set_desync_cframe(nil)
                 end
+                return
             end
             
             if hasFF(targetPlayer) then
@@ -565,14 +551,6 @@ api:add_connection(runs.Heartbeat:Connect(function()
 
     if autobagstates.target and not autobagstates.downing and (isBagged(autobagstates.target.Player) or isKOd(autobagstates.target.Player)) then
         local tp = autobagstates.target.Player
-
-        -- Fix: Check if they got KO'd while we were chasing them and stomp is OFF.
-        if isKOd(tp) and not Toggles.autostomp.Value then
-            api:set_ragebot(false)
-            local doVoid = getVoidState() or protectionstate.hiding
-            cleanupAutobag(doVoid)
-            return
-        end
 
         addToRagebotTargets(tp.Name)
         if autobagstates.target.Part then
