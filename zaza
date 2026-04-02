@@ -444,7 +444,9 @@ autobagbox:AddSlider('autobagdistance', {
     Default = 3,
     Min = 0,
     Max = 5,
-    Rounding = 0
+    Rounding = 0,
+    Compact = false,
+    HideMax = true
 })
 
 autobag:OnChanged(function(v)
@@ -467,21 +469,25 @@ autobuybox:AddSlider('firearmor_threshold', {
     Min = 1,
     Max = 99,
     Suffix = '%',
-    Rounding = 0
+    Rounding = 0,
+    Compact = false,
+    HideMax = true
 })
 
 autobuybox:AddToggle('autoheal', {
     Text = 'hamburger',
-    Default = true
+    Default = false
 })
 
 autobuybox:AddSlider('heal_threshold', {
     Text = 'threshold',
-    Default = 75,
+    Default = 50,
     Min = 1,
-    Max = 99,
+    Max = 100,
     Suffix = '%',
-    Rounding = 0
+    Rounding = 0,
+    Compact = false,
+    HideMax = true
 })
 
 -- Better Void Section
@@ -508,7 +514,9 @@ voidbox:AddSlider('invoid_time', {
     Min = 0.02,
     Max = 1,
     Rounding = 2,
-    Suffix = 's'
+    Suffix = 's',
+    Compact = false,
+    HideMax = true
 })
 
 voidbox:AddSlider('outofvoid_time', {
@@ -517,7 +525,9 @@ voidbox:AddSlider('outofvoid_time', {
     Min = 0.02,
     Max = 1,
     Rounding = 2,
-    Suffix = 's'
+    Suffix = 's',
+    Compact = false,
+    HideMax = true
 })
 
 voidtoggle:OnChanged(function(v)
