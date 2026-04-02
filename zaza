@@ -38,23 +38,59 @@ local protectionstate = {
 
 local resetDebounce = 0
 
--- Global Player Search Helper
+-- Global Player Search Helper with Fuzzy Matching
 local function getPlayerFromSearch(str)
     if not str or str == "" then return nil end
     str = str:lower()
+    
+    local players = plrs:GetPlayers()
+    if #players == 0 then return nil end
+
     -- First pass: check for exact starts with
-    for _, p in ipairs(plrs:GetPlayers()) do
+    for _, p in ipairs(players) do
         if p.Name:lower():sub(1, #str) == str or p.DisplayName:lower():sub(1, #str) == str then
             return p
         end
     end
-    -- Second pass: check for anywhere in name
-    for _, p in ipairs(plrs:GetPlayers()) do
-        if p.Name:lower():find(str) or p.DisplayName:lower():find(str) then
+    
+    -- Second pass: check for anywhere in name (plain text, no patterns)
+    for _, p in ipairs(players) do
+        if p.Name:lower():find(str, 1, true) or p.DisplayName:lower():find(str, 1, true) then
             return p
         end
     end
-    return nil
+    
+    -- Third pass: Fuzzy match for closest string distance (Levenshtein)
+    local closestPlayer = nil
+    local bestScore = math.huge
+    
+    local function getDistance(s1, s2)
+        if #s1 == 0 then return #s2 end
+        if #s2 == 0 then return #s1 end
+        local matrix = {}
+        for i = 0, #s1 do matrix[i] = {[0] = i} end
+        for j = 0, #s2 do matrix[0][j] = j end
+        for i = 1, #s1 do
+            for j = 1, #s2 do
+                local cost = (s1:sub(i, i) == s2:sub(j, j) and 0 or 1)
+                matrix[i][j] = math.min(matrix[i-1][j] + 1, matrix[i][j-1] + 1, matrix[i-1][j-1] + cost)
+            end
+        end
+        return matrix[#s1][#s2]
+    end
+    
+    for _, p in ipairs(players) do
+        local d1 = getDistance(str, p.Name:lower())
+        local d2 = getDistance(str, p.DisplayName:lower())
+        local minD = math.min(d1, d2)
+        
+        if minD < bestScore then
+            bestScore = minD
+            closestPlayer = p
+        end
+    end
+    
+    return closestPlayer
 end
 
 local function getVoidState()
@@ -234,7 +270,7 @@ protectionbox:AddDropdown('antiflametargets', {
     Multi = true
 })
 
-local protSearchResult = protectionbox:AddLabel('result: none')
+local protSearchResult = protectionbox:AddLabel('result: ?')
 local protFoundPlayer = nil
 
 protectionbox:AddInput('protSearch', {
@@ -242,15 +278,21 @@ protectionbox:AddInput('protSearch', {
     Text = 'search player',
     Numeric = false,
     Finished = false,
-    Placeholder = 'username/display'
+    Placeholder = 'player...'
 }):OnChanged(function(text)
+    if not text or text == "" then
+        protFoundPlayer = nil
+        protSearchResult:SetText('result: ?')
+        return
+    end
+
     local p = getPlayerFromSearch(text)
     if p then
         protFoundPlayer = p
         protSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
     else
         protFoundPlayer = nil
-        protSearchResult:SetText('result: none')
+        protSearchResult:SetText('result: ?')
     end
 end)
 
@@ -311,7 +353,7 @@ autobagbox:AddDropdown('autobagtargets', {
     end
 end)
 
-local autobagSearchResult = autobagbox:AddLabel('result: none')
+local autobagSearchResult = autobagbox:AddLabel('result: ?')
 local autobagFoundPlayer = nil
 
 autobagbox:AddInput('autobagSearch', {
@@ -319,15 +361,21 @@ autobagbox:AddInput('autobagSearch', {
     Text = 'search player',
     Numeric = false,
     Finished = false,
-    Placeholder = 'username/display'
+    Placeholder = 'player...'
 }):OnChanged(function(text)
+    if not text or text == "" then
+        autobagFoundPlayer = nil
+        autobagSearchResult:SetText('result: ?')
+        return
+    end
+
     local p = getPlayerFromSearch(text)
     if p then
         autobagFoundPlayer = p
         autobagSearchResult:SetText('result: <b>' .. p.DisplayName .. ' (@' .. p.Name .. ')</b>')
     else
         autobagFoundPlayer = nil
-        autobagSearchResult:SetText('result: none')
+        autobagSearchResult:SetText('result: ?')
     end
 end)
 
