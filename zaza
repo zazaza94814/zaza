@@ -15,6 +15,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local voidbox = tab:GetGroupbox("better void") or tab:AddLeftGroupbox("better void")
+local autobuybox = tab:GetGroupbox("autobuy") or tab:AddRightGroupbox("autobuy")
 
 local autobagstates = {
     lastbought = 0,
@@ -270,11 +271,12 @@ protectionbox:AddToggle('antibag', {
     Text = 'antibag',
     Default = true
 })
-protectionbox:AddToggle('autofirearmor', {
+
+autobuybox:AddToggle('autofirearmor', {
     Text = 'autobuy firearmor',
     Default = true
 })
-protectionbox:AddSlider('firearmor_threshold', {
+autobuybox:AddSlider('firearmor_threshold', {
     Text = 'firearmor threshold',
     Default = 50,
     Min = 1,
