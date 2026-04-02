@@ -38,6 +38,25 @@ local protectionstate = {
 
 local resetDebounce = 0
 
+-- Global Player Search Helper
+local function getPlayerFromSearch(str)
+    if not str or str == "" then return nil end
+    str = str:lower()
+    -- First pass: check for exact starts with
+    for _, p in ipairs(plrs:GetPlayers()) do
+        if p.Name:lower():sub(1, #str) == str or p.DisplayName:lower():sub(1, #str) == str then
+            return p
+        end
+    end
+    -- Second pass: check for anywhere in name
+    for _, p in ipairs(plrs:GetPlayers()) do
+        if p.Name:lower():find(str) or p.DisplayName:lower():find(str) then
+            return p
+        end
+    end
+    return nil
+end
+
 local function getVoidState()
     if Toggles.manualvoid and Toggles.manualvoid.Value then
         if char and char:FindFirstChild("[Flamethrower]") then
@@ -214,6 +233,48 @@ protectionbox:AddDropdown('antiflametargets', {
     Text = 'targets',
     Multi = true
 })
+
+local protSearchResult = protectionbox:AddLabel('Result: None')
+local protFoundPlayer = nil
+
+protectionbox:AddInput('protSearch', {
+    Default = '',
+    Text = 'search player',
+    Numeric = false,
+    Finished = false,
+    Placeholder = 'username/display'
+}):OnChanged(function(text)
+    local p = getPlayerFromSearch(text)
+    if p then
+        protFoundPlayer = p
+        protSearchResult:SetText('Result: ' .. p.DisplayName .. ' (@' .. p.Name .. ')')
+    else
+        protFoundPlayer = nil
+        protSearchResult:SetText('Result: None')
+    end
+end)
+
+protectionbox:AddButton({
+    Text = 'target',
+    Func = function()
+        if protFoundPlayer then
+            local current = {}
+            for k, v in pairs(Options.antiflametargets.Value or {}) do
+                current[k] = v
+            end
+            current[protFoundPlayer.Name] = true
+            Options.antiflametargets:SetValue(current)
+        end
+    end
+})
+
+protectionbox:AddButton({
+    Text = 'clear targets',
+    Func = function()
+        Options.antiflametargets:SetValue({})
+    end
+})
+
 protectionbox:AddToggle('antiflame', {
     Text = 'antiflame',
     Default = true
@@ -250,6 +311,47 @@ autobagbox:AddDropdown('autobagtargets', {
     end
 end)
 
+local autobagSearchResult = autobagbox:AddLabel('Result: None')
+local autobagFoundPlayer = nil
+
+autobagbox:AddInput('autobagSearch', {
+    Default = '',
+    Text = 'search player',
+    Numeric = false,
+    Finished = false,
+    Placeholder = 'username/display'
+}):OnChanged(function(text)
+    local p = getPlayerFromSearch(text)
+    if p then
+        autobagFoundPlayer = p
+        autobagSearchResult:SetText('Result: ' .. p.DisplayName .. ' (@' .. p.Name .. ')')
+    else
+        autobagFoundPlayer = nil
+        autobagSearchResult:SetText('Result: None')
+    end
+end)
+
+autobagbox:AddButton({
+    Text = 'target',
+    Func = function()
+        if autobagFoundPlayer then
+            local current = {}
+            for k, v in pairs(Options.autobagtargets.Value or {}) do
+                current[k] = v
+            end
+            current[autobagFoundPlayer.Name] = true
+            Options.autobagtargets:SetValue(current)
+        end
+    end
+})
+
+autobagbox:AddButton({
+    Text = 'clear targets',
+    Func = function()
+        Options.autobagtargets:SetValue({})
+    end
+})
+
 local autobag = autobagbox:AddToggle('autobag', {
     Text = 'enabled',
     Default = false
@@ -285,8 +387,8 @@ autobuybox:AddToggle('autofirearmor', {
 })
 
 autobuybox:AddSlider('firearmor_threshold', {
-    Text = 'threshold',
-    Default = 35,
+    Text = 'firearmor threshold',
+    Default = 50,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -299,10 +401,10 @@ autobuybox:AddToggle('autoheal', {
 })
 
 autobuybox:AddSlider('heal_threshold', {
-    Text = 'threshold',
+    Text = 'heal threshold',
     Default = 50,
     Min = 1,
-    Max = 100,
+    Max = 99,
     Suffix = '%',
     Rounding = 0
 })
