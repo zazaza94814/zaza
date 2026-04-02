@@ -12,7 +12,7 @@ local plr = plrs.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
--- UI Layout
+-- UI Layout: Left side for main features, Right side for better void
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local autobuybox = tab:GetGroupbox("autobuy") or tab:AddLeftGroupbox("autobuy")
@@ -34,6 +34,11 @@ local protectionstate = {
     fireArmorLastBought = 0,
     healing = false,
     burgerLastBought = 0
+}
+
+local spamState = {
+    inVoid = true,
+    lastSwitch = os.clock()
 }
 
 local resetDebounce = 0
@@ -121,6 +126,12 @@ local function getVoidState()
                 end
             end
         end
+        
+        -- Spam logic check
+        if Toggles.spamvoid and Toggles.spamvoid.Value then
+            return spamState.inVoid
+        end
+        
         return true
     end
     return false
@@ -486,6 +497,29 @@ voidtoggle:AddKeyPicker('voidkeybind', {
     SyncToggleState = true
 })
 
+voidbox:AddToggle('spamvoid', {
+    Text = 'spam',
+    Default = false
+})
+
+voidbox:AddSlider('invoid_time', {
+    Text = 'in void',
+    Default = 1,
+    Min = 0.02,
+    Max = 1,
+    Rounding = 2,
+    Suffix = 's'
+})
+
+voidbox:AddSlider('outofvoid_time', {
+    Text = 'out of void',
+    Default = 0.1,
+    Min = 0.02,
+    Max = 1,
+    Rounding = 2,
+    Suffix = 's'
+})
+
 voidtoggle:OnChanged(function(v)
     if not v then
         if not protectionstate.hiding and not autobagstates.ffHiding and not protectionstate.healing then
@@ -544,6 +578,18 @@ api:add_connection(runs.Heartbeat:Connect(function()
     char = plr.Character or char
     hrp = char and char:FindFirstChild("HumanoidRootPart") or hrp
     if not hrp then return end
+
+    -- Manage Void Spam Timer
+    if Toggles.spamvoid and Toggles.spamvoid.Value then
+        local now = os.clock()
+        local delay = spamState.inVoid and Options.invoid_time.Value or Options.outofvoid_time.Value
+        if now - spamState.lastSwitch >= delay then
+            spamState.inVoid = not spamState.inVoid
+            spamState.lastSwitch = now
+        end
+    else
+        spamState.inVoid = true
+    end
 
     local isAutobagOn = Toggles.autobag and Toggles.autobag.Value
 
