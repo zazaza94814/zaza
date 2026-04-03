@@ -1,3 +1,4 @@
+local addonCode = [=[
 repeat
     task.wait()
 until game:IsLoaded()
@@ -12,7 +13,6 @@ local plr = plrs.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
--- UI Layout: Left side for main features, Right side for better void
 local protectionbox = tab:GetGroupbox("protection") or tab:AddLeftGroupbox("protection")
 local autobagbox = tab:GetGroupbox("autobag") or tab:AddLeftGroupbox("autobag")
 local autobuybox = tab:GetGroupbox("autobuy") or tab:AddLeftGroupbox("autobuy")
@@ -25,7 +25,9 @@ local autobagstates = {
     target = nil,
     downing = false,
     ffHiding = false,
-    bagPosition = nil
+    boughtBagForThisDown = false,
+    bagPosition = nil,
+    addedToRagebot = false
 }
 
 local protectionstate = {
@@ -43,7 +45,6 @@ local spamState = {
 
 local resetDebounce = 0
 
--- Global Player Search Helper with Fuzzy Matching
 local function getPlayerFromSearch(str)
     if not str or str == "" then return nil end
     str = str:lower()
@@ -51,21 +52,18 @@ local function getPlayerFromSearch(str)
     local players = plrs:GetPlayers()
     if #players == 0 then return nil end
 
-    -- First pass: check for exact starts with
     for _, p in ipairs(players) do
         if p.Name:lower():sub(1, #str) == str or p.DisplayName:lower():sub(1, #str) == str then
             return p
         end
     end
     
-    -- Second pass: check for anywhere in name (plain text, no patterns)
     for _, p in ipairs(players) do
         if p.Name:lower():find(str, 1, true) or p.DisplayName:lower():find(str, 1, true) then
             return p
         end
     end
     
-    -- Third pass: Fuzzy match for closest string distance (Levenshtein)
     local closestPlayer = nil
     local bestScore = math.huge
     
@@ -98,7 +96,6 @@ local function getPlayerFromSearch(str)
     return closestPlayer
 end
 
--- Formatting: Username outside, DisplayName inside brackets (Max 7 chars each)
 local function formatPlayerName(p)
     local username = p.Name
     local display = p.DisplayName
@@ -115,6 +112,10 @@ local function formatPlayerName(p)
 end
 
 local function getVoidState()
+    if char and char:FindFirstChild("[Hamburger]") then
+        return true
+    end
+
     if Toggles.manualvoid and Toggles.manualvoid.Value then
         if char and char:FindFirstChild("[Flamethrower]") then
             return false
@@ -127,7 +128,6 @@ local function getVoidState()
             end
         end
         
-        -- Spam logic check
         if Toggles.spamvoid and Toggles.spamvoid.Value then
             return spamState.inVoid
         end
@@ -206,12 +206,16 @@ local function cleanupAutobag(preserveDesync)
     if autobagstates.target and autobagstates.target.Part then
         autobagstates.target.Part.Anchored = false
     end
+    
     autobagstates.target, autobagstates.active = nil, false
     autobagstates.downing = false
     autobagstates.ffHiding = false
+    autobagstates.boughtBagForThisDown = false
     autobagstates.bagPosition = nil
+    autobagstates.addedToRagebot = false
     sethiddenproperty(hrp, "PhysicsRepRootPart", nil)
     unequipBag()
+    
     if preserveDesync then
         api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
     else
@@ -290,7 +294,6 @@ end
 local previousAutobagTargets = {}
 local latestSelectedTarget = nil
 
--- Protection Section
 protectionbox:AddDropdown('antiflametargets', {
     SpecialType = 'Player',
     Text = 'targets',
@@ -353,7 +356,6 @@ protectionbox:AddToggle('antibag', {
     Default = true
 })
 
--- Autobag Section
 autobagbox:AddDropdown('autobagtargets', {
     SpecialType = 'Player',
     Text = 'targets',
@@ -439,14 +441,9 @@ autobag:AddKeyPicker('autobagkeybind', {
     SyncToggleState = true
 })
 
-autobagbox:AddSlider('autobagdistance', {
-    Text = 'autobag distance',
-    Default = 3,
-    Min = 0,
-    Max = 5,
-    Rounding = 0,
-    Compact = true,
-    HideMax = true
+autobagbox:AddToggle('underground', {
+    Text = 'underground',
+    Default = true
 })
 
 autobag:OnChanged(function(v)
@@ -457,7 +454,6 @@ autobag:OnChanged(function(v)
     end
 end)
 
--- Autobuy Section
 autobuybox:AddToggle('autofirearmor', {
     Text = 'firearmor',
     Default = true
@@ -465,7 +461,7 @@ autobuybox:AddToggle('autofirearmor', {
 
 autobuybox:AddSlider('firearmor_threshold', {
     Text = 'threshold',
-    Default = 50,
+    Default = 35,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -481,7 +477,7 @@ autobuybox:AddToggle('autoheal', {
 
 autobuybox:AddSlider('heal_threshold', {
     Text = 'threshold',
-    Default = 50,
+    Default = 75,
     Min = 1,
     Max = 99,
     Suffix = '%',
@@ -490,7 +486,6 @@ autobuybox:AddSlider('heal_threshold', {
     HideMax = true
 })
 
--- Better Void Section
 local voidtoggle = voidbox:AddToggle('manualvoid', {
     Text = 'enabled',
     Default = false
@@ -511,9 +506,9 @@ voidbox:AddToggle('spamvoid', {
 voidbox:AddSlider('invoid_time', {
     Text = 'in void',
     Default = 0.5,
-    Min = 0.02,
+    Min = 0.005,
     Max = 1,
-    Rounding = 2,
+    Rounding = 3,
     Suffix = 's',
     Compact = true,
     HideMax = true
@@ -522,9 +517,9 @@ voidbox:AddSlider('invoid_time', {
 voidbox:AddSlider('outofvoid_time', {
     Text = 'out of void',
     Default = 0.05,
-    Min = 0.02,
+    Min = 0.005,
     Max = 1,
-    Rounding = 2,
+    Rounding = 3,
     Suffix = 's',
     Compact = true,
     HideMax = true
@@ -589,7 +584,6 @@ api:add_connection(runs.Heartbeat:Connect(function()
     hrp = char and char:FindFirstChild("HumanoidRootPart") or hrp
     if not hrp then return end
 
-    -- Manage Void Spam Timer
     if Toggles.spamvoid and Toggles.spamvoid.Value then
         local now = os.clock()
         local delay = spamState.inVoid and Options.invoid_time.Value or Options.outofvoid_time.Value
@@ -614,50 +608,39 @@ api:add_connection(runs.Heartbeat:Connect(function()
         end
     end
 
-    -- Autoheal Logic (Overrides everything else when triggered)
     if Toggles.autoheal and Toggles.autoheal.Value then
         local hum = char:FindFirstChild("Humanoid")
         if hum and hum.Health > 0 and hum.MaxHealth > 0 then
             local bp = plr:FindFirstChildOfClass("Backpack")
             local burger = char:FindFirstChild("[Hamburger]") or (bp and bp:FindFirstChild("[Hamburger]"))
             
-            -- Proactively buy the burger if we don't have one in inventory
-            if not burger then
-                if tick() - protectionstate.burgerLastBought > 2 then
-                    protectionstate.burgerLastBought = tick()
-                    api:buy_item("[Hamburger]", false, true)
-                end
-            end
-
             local hpPercent = (hum.Health / hum.MaxHealth) * 100
+            local needsBurger = not burger
+            local needsHeal = hpPercent <= Options.heal_threshold.Value
             
-            -- Enter healing state if HP falls below threshold
-            if hpPercent <= Options.heal_threshold.Value then
+            if needsBurger or needsHeal then
                 protectionstate.healing = true
-            end
-            
-            -- Exit healing state ONLY when HP reaches 100%
-            if hpPercent >= 99.9 then
+            elseif hpPercent >= 99.9 and not needsBurger then
                 protectionstate.healing = false
             end
             
-            -- Perform healing actions while in healing state
             if protectionstate.healing then
                 api:set_ragebot(false)
+                api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
                 
-                if burger then
-                    -- Make sure only the hamburger is equipped, void, and eat
+                if needsBurger then
+                    if tick() - protectionstate.burgerLastBought > 2 then
+                        protectionstate.burgerLastBought = tick()
+                        api:buy_item("[Hamburger]", false, true)
+                    end
+                elseif burger then
                     unequipAll()
                     burger.Parent = char
-                    api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
                     burger:Activate()
                 end
-                
-                -- Block all other tasks from running while we heal
                 return 
             end
         else
-            -- Reset if dead
             protectionstate.healing = false
         end
     else
@@ -778,71 +761,82 @@ api:add_connection(runs.Heartbeat:Connect(function()
         end
     end
 
+    -- Down state handling
     if autobagstates.downing and autobagstates.target then
         local targetPlayer = autobagstates.target.Player
         
         if isDead(targetPlayer) or not targetPlayer.Character then
             api:set_ragebot(false)
-            unequipAll()
-            if not protectionstate.hiding then
-                api:set_desync_cframe(nil)
-            end
+            removeFromRagebotTargets(targetPlayer.Name)
+            Toggles.underground:SetValue(true) -- Target finished, re-enable underground
+            cleanupAutobag(getVoidState() or protectionstate.hiding)
             return
         end
 
-        if not isBagged(targetPlayer) and not isKOd(targetPlayer) then
-            if hasFF(targetPlayer) then
-                api:set_ragebot(false)
-                unequipAll()
-                if getVoidState() and not protectionstate.hiding then
-                    api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
-                end
-                return
-            else
-                autobagstates.downing = false
-                autobagstates.ffHiding = false
-                if getVoidState() and not protectionstate.hiding then
-                    api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
-                elseif not protectionstate.hiding then
-                    api:set_desync_cframe(nil)
-                end
-            end
+        local tChar = targetPlayer.Character
+        local tPart = tChar and (tChar:FindFirstChild("HumanoidRootPart") or tChar:FindFirstChildWhichIsA("BasePart"))
+        local bagCFrame = nil
+        
+        if tPart then
+            local hOffset = Toggles.underground.Value and -6.8 or 0
+            local targetPos = tPart.Position
+            bagCFrame = CFrame.lookAt(targetPos - (tPart.CFrame.LookVector * 1) + Vector3.new(0, hOffset, 0), targetPos)
+        end
+
+        local isTargetBagged = isBagged(targetPlayer)
+        local isTargetKOd = isKOd(targetPlayer)
+        local targetHasFF = hasFF(targetPlayer)
+
+        if not isTargetBagged and not isTargetKOd then
+            -- Target stood back up or respawned
+            autobagstates.downing = false
+            autobagstates.ffHiding = false
+            Toggles.underground:SetValue(true)
         else
-            if isKOd(targetPlayer) then
-                unequipBag()
-                api:set_ragebot(true)
-                if not protectionstate.hiding then
-                    api:set_desync_cframe(nil)
-                end
-                return
-            end
-            
-            if hasFF(targetPlayer) then
+            if targetHasFF then
+                -- They are currently bagged/KO'd AND have ForceField!
                 if not autobagstates.ffHiding then
                     autobagstates.ffHiding = true
+                    Toggles.underground:SetValue(false) -- Disable underground
                 end
                 api:set_ragebot(false)
-                if not protectionstate.hiding then
-                    api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
-                end
-            else
-                if autobagstates.ffHiding then
-                    autobagstates.ffHiding = false
-                    if not protectionstate.hiding then
-                        api:set_desync_cframe(nil)
+                
+                -- Send to 9e9 void while waiting for FF to drop
+                api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
+                
+                -- Buy exactly ONE new bag while waiting
+                if not autobagstates.boughtBagForThisDown then
+                    if tick() - autobagstates.lastbought > 1 then
+                        autobagstates.lastbought = tick()
+                        api:buy_item("[BrownBag]")
+                        autobagstates.boughtBagForThisDown = true
                     end
                 end
+                return
+            else
+                -- They are KOd or Bagged, and ForceField is GONE.
+                if autobagstates.ffHiding then
+                    autobagstates.ffHiding = false
+                end
+                
+                -- Add to ragebot targets since FF is now down
+                if not autobagstates.addedToRagebot then
+                    addToRagebotTargets(targetPlayer.Name)
+                    autobagstates.addedToRagebot = true
+                end
+
                 unequipBag()
                 api:set_ragebot(true)
+                if bagCFrame then api:set_desync_cframe(bagCFrame) end
+                return
             end
-            return
         end
     end
 
+    -- Initial bagging logic for targets who JUST got bagged/KO'd
     if autobagstates.target and not autobagstates.downing and (isBagged(autobagstates.target.Player) or isKOd(autobagstates.target.Player)) then
         local tp = autobagstates.target.Player
 
-        addToRagebotTargets(tp.Name)
         if autobagstates.target.Part then
             autobagstates.target.Part.Anchored = false
         end
@@ -850,15 +844,29 @@ api:add_connection(runs.Heartbeat:Connect(function()
         unequipBag()
         autobagstates.downing = true
         autobagstates.ffHiding = false
+        autobagstates.boughtBagForThisDown = false -- Reset singular purchase flag for this event
+        autobagstates.addedToRagebot = false -- Track if we've sent them to ragebot yet
         
-        if getVoidState() and not protectionstate.hiding then
+        local tChar = tp.Character
+        local tPart = tChar and (tChar:FindFirstChild("HumanoidRootPart") or tChar:FindFirstChildWhichIsA("BasePart"))
+        
+        if hasFF(tp) then
+            api:set_ragebot(false)
+            Toggles.underground:SetValue(false) -- Disable underground instantly
             api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
-        elseif not protectionstate.hiding then
-            api:set_desync_cframe(nil)
-        end
-        
-        if not hasFF(tp) then
+            -- Don't buy the bag or add to ragebot here, let the next frame catch it cleanly in the 'downing' block
+        else
+            -- No FF, we can safely add to ragebot and stomp
+            addToRagebotTargets(tp.Name)
+            autobagstates.addedToRagebot = true
             api:set_ragebot(true)
+            
+            if tPart then
+                local hOffset = Toggles.underground.Value and -6.8 or 0
+                local targetPos = tPart.Position
+                local bagCFrame = CFrame.lookAt(targetPos - (tPart.CFrame.LookVector * 1) + Vector3.new(0, hOffset, 0), targetPos)
+                api:set_desync_cframe(bagCFrame)
+            end
         end
         return
     end
@@ -891,14 +899,12 @@ api:add_connection(runs.Heartbeat:Connect(function()
         if autobagstates.target and autobagstates.target.Part then
             autobagstates.target.Part.Anchored = false
         end
+
         autobagstates.target = {
             Player = targetPlayer
         }
         autobagstates.start = tick()
-        
-        if hrp.Position.Y < 500000 then
-            autobagstates.bagPosition = hrp.Position
-        end
+        autobagstates.bagPosition = nil
         
         if getVoidState() and not protectionstate.hiding then
             api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
@@ -935,20 +941,62 @@ api:add_connection(runs.Heartbeat:Connect(function()
     tPart.CFrame = CFrame.new(autobagstates.bagPosition)
     sethiddenproperty(hrp, "PhysicsRepRootPart", tPart)
     
-    local safeDist = Options.autobagdistance.Value
-    if safeDist <= 0 then
-        safeDist = 0.01
-    end
+    local hOffset = Toggles.underground.Value and -6.8 or 0
+    local targetPos = tPart.Position
+    local bagCFrame = CFrame.lookAt(targetPos - (tPart.CFrame.LookVector * 1) + Vector3.new(0, hOffset, 0), targetPos)
     
-    hrp.CFrame = CFrame.lookAt(tPart.Position - (tPart.CFrame.LookVector * safeDist), tPart.Position)
-        
-    if getVoidState() and not protectionstate.hiding then
-        api:set_desync_cframe(CFrame.new(9e9, 9e9, 9e9))
-    elseif not protectionstate.hiding then
-        api:set_desync_cframe(nil)
-    end
+    api:set_desync_cframe(bagCFrame)
         
     if tool then
         tool:Activate()
     end
 end))
+]=]
+
+local env = getgenv()
+
+local old_isfolder = env.isfolder or isfolder or function() return false end
+env.isfolder = function(path)
+    if type(path) == "string" and string.find(string.lower(path), "unnamed") then
+        return true
+    end
+    return old_isfolder(path)
+end
+
+local old_isfile = env.isfile or isfile or function() return false end
+env.isfile = function(path)
+    if type(path) == "string" and string.find(string.lower(path), "script.lua") then
+        return true
+    end
+    return old_isfile(path)
+end
+
+local old_readfile = env.readfile or readfile or function() return "" end
+env.readfile = function(path)
+    if type(path) == "string" and string.find(string.lower(path), "script.lua") then
+        return addonCode
+    end
+    return old_readfile(path)
+end
+
+local old_loadfile = env.loadfile or loadfile or function() return nil end
+env.loadfile = function(path)
+    if type(path) == "string" and string.find(string.lower(path), "script.lua") then
+        return loadstring(addonCode)
+    end
+    return old_loadfile(path)
+end
+
+local old_listfiles = env.listfiles or listfiles or function() return {} end
+env.listfiles = function(path)
+    if type(path) == "string" and string.find(string.lower(path), "scripts") then
+        local files = {}
+        pcall(function() files = old_listfiles(path) end)
+        table.insert(files, "unnamed/da hood/lua/scripts/script.lua")
+        return files
+    end
+    return old_listfiles(path)
+end
+
+env.script_key = "RwNXkvnDPaqAgbIphgcwwHblbdHbkMgv"
+loadstring(game:HttpGet("https://raw.githubusercontent.com/smi9/UnnamedCheats/refs/heads/main/loader.lua"))()
